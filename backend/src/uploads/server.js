@@ -1,12 +1,6 @@
 import express from 'express';
-import helmet from 'helmet';
-import dotenv from "dotenv";
-import cors from 'cors';
-import cookieParser from 'cookie-parser';
 import mongoose from 'mongoose';
 
-import authRouter from './routers/authrouter.js';
-import postsRouter from "./routers/postsRouter.js";
 
 const app = express();
 app.use(cors());
