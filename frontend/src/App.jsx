@@ -1,35 +1,36 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Home from "./pages/Home.jsx";
+import Hhome from "./pages/Hhome.jsx";
+import Login from './pages/auth/Login.jsx';
+import Signup from './pages/auth/Signup.jsx';
+import VerifyEmail from './pages/auth/VerifyEmail.jsx';
+import MyReports from './pages/citizen/MyReports.jsx';
+import ReportIssue from './pages/citizen/ReportIssue.jsx';
+import NotFound from "./pages/NotFound.jsx";
+import MapView from './pages/citizen/MapView.jsx';
+import Feedback from './pages/citizen/Feedback.jsx';
 
 function App() {
-  const [count, setCount] = useState(0)
+  return (  
+    <Router>
+      <Routes>
+        {/* frontend route */}
+        <Route path="/" element={<Home />} />
+        <Route path="/home" element={<Hhome />} />
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+        <Route path="/myreports" element={<MyReports />} />
+        <Route path="/report-issue" element={<ReportIssue />} />
+        <Route path="/map-view" element={<MapView />} />
+        <Route path="/feedback" element={<Feedback />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+
+        {/* catch-all route */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Router>
+  );
 }
 
-export default App
+export default App;

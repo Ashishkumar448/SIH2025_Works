@@ -1,13 +1,13 @@
 import jwt from 'jsonwebtoken';
-import { acceptCodeSchema, signinSchema, signupSchema , changePasswordSchema, acceptForgetPasswordCodeSchema} from "../middlewares/validator.js";
-import User from "../models/usersModel.js";
-import { dohash, doHashValidation, hmacProcess } from "../utils/hashing.js";
-import transport from '../middlewares/sendMail.js';
+import { acceptCodeSchema, signinSchema, signupSchema , changePasswordSchema, acceptForgetPasswordCodeSchema} from "../utils/errorHandler.js";
+import User from "../models/User.js";
+import { dohash, doHashValidation, hmacProcess } from "../utils/jwt.js";
+import transport from '../config/mailer.js';
 
 export const signup = async (req, res) => {
-    const { email, password } = req.body;
+    const { firstName, lastName, email, password } = req.body;
     try {
-        const { error, value } = signupSchema.validate({ email, password });
+        const { error, value } = signupSchema.validate({ firstName, lastName, email, password });
 
         if (error) {
             return res.status(401).json({ success: false, message: error.details[0].message })
@@ -20,6 +20,8 @@ export const signup = async (req, res) => {
 
         const hashedPassword = await dohash(password, 12);
         const newUser = new User({
+            firstName,
+            lastName,
             email,
             password: hashedPassword,
         });
@@ -32,8 +34,10 @@ export const signup = async (req, res) => {
 
     } catch (error) {
         console.log(error);
+        res.status(500).json({ success: false, message: "Internal server error" });
     }
 };
+
 
 export const signin = async (req, res) => {
     const { email, password } = req.body;
@@ -71,7 +75,9 @@ export const signout = async (req, res) => {
 }
 
 export const sendVerificationCode = async (req, res) => {
-    const { email } = req.body;
+    // Get user info from JWT token (set by identifier middleware)
+    const { userId, email } = req.user;
+    
     try {
         const existingUser = await User.findOne({ email: email.toLowerCase() });
         if (!existingUser) {
@@ -98,20 +104,23 @@ export const sendVerificationCode = async (req, res) => {
         }
         res.status(400).json({ success: false, message: "code sending failed !" })
 
-
     } catch (error) {
         console.log(error);
-
+        res.status(500).json({ success: false, message: "Internal server error" });
     }
 }
 
+
 export const verifyVerificationCode = async (req, res) => {
-    const { email, providedCode } = req.body;
+    const { providedCode } = req.body;
+    const { email } = req.user; // Get email from JWT token
+    
     try {
         const { error, value } = acceptCodeSchema.validate({ email, providedCode });
         if (error) {
             return res.status(401).json({ success: false, message: error.details[0].message })
         }
+        
         const codeValue = providedCode.toString();
         const existingUser = await User.findOne({ email }).select("+verificationCode +verificationCodeValidation");
         if (!existingUser) {
@@ -131,11 +140,10 @@ export const verifyVerificationCode = async (req, res) => {
             });
         }
 
-
-
         if (Date.now() - existingUser.verificationCodeValidation > 5 * 60 * 1000) {
             return res.status(400).json({ success: false, message: "Code has been expired" });
         }
+        
         const hashedCodeValue = hmacProcess(codeValue, process.env.HMAC_VERIFICATION_CODE_SECRET);
         if (hashedCodeValue === existingUser.verificationCode) {
             existingUser.verified = true;
@@ -147,7 +155,7 @@ export const verifyVerificationCode = async (req, res) => {
         return res.status(400).json({ success: false, message: "unexpected error occured!" });
     } catch (error) {
         console.log(error);
-
+        res.status(500).json({ success: false, message: "Internal server error" });
     }
 };
 
